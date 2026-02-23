@@ -1,0 +1,17 @@
+{
+    "manifest_version": 3,
+    "name": "Quick Archive",
+    "version": "1.0.0",
+    "description": "Archive your open tabs and restore them later instantly.",
+    "action": {
+        "default_popup": "index.html"
+    },
+    "background": {
+        "service_worker": "src/background.ts",
+        "type": "module"
+    },
+    "permissions": [
+        "tabs",
+        "storage"
+    ]
+}
