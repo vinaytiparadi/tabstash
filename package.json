@@ -1,7 +1,8 @@
 {
-  "name": "quick_archive",
+  "name": "tabstash",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "author": "Vinay Tiparadi",
   "type": "module",
   "scripts": {
     "dev": "vite",

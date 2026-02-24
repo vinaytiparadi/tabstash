@@ -2,6 +2,10 @@
     "manifest_version": 3,
     "name": "TabStash",
     "version": "1.0.0",
+    "author": {
+        "name": "Vinay Tiparadi",
+        "email": "vinaytiparadi123@gmail.com"
+    },
     "description": "Archive your open tabs and restore them later instantly.",
     "action": {
         "default_popup": "index.html",
