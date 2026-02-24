@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Archive, Trash2, ExternalLink, PackageOpen, Loader2, Pencil, Check, X, ArchiveRestore, Settings } from "lucide-react";
+import { Archive, Trash2, ExternalLink, PackageOpen, Loader2, Pencil, Check, X, ArchiveRestore, Settings, SortAsc, SortDesc } from "lucide-react";
 import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
 import { cn } from "./lib/utils";
 import type { Archive as ArchiveType } from "./background";
@@ -37,7 +37,12 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [archiving, setArchiving] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [settings, setSettings] = useState({ restoreInNewWindow: true });
+  const [settings, setSettings] = useState({
+    restoreInNewWindow: true,
+    closeWindowAfterArchiving: false,
+    sortField: 'date' as 'date' | 'name',
+    sortOrder: 'desc' as 'asc' | 'desc'
+  });
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
@@ -46,7 +51,12 @@ export default function App() {
     chrome.storage.local.get(["archives", "settings"], (data: any) => {
       setArchives(data.archives || []);
       if (data.settings) {
-        setSettings(data.settings);
+        setSettings({
+          restoreInNewWindow: data.settings.restoreInNewWindow ?? true,
+          closeWindowAfterArchiving: data.settings.closeWindowAfterArchiving ?? false,
+          sortField: data.settings.sortField ?? 'date',
+          sortOrder: data.settings.sortOrder ?? 'desc',
+        });
       }
       setLoading(false);
     });
@@ -164,6 +174,78 @@ export default function App() {
                 </button>
               </div>
             </div>
+
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex-1">
+                <p className="text-sm font-medium leading-none mb-1">After sweeping tabs</p>
+                <p className="text-[11px] text-muted-foreground leading-tight">What happens after archiving a window</p>
+              </div>
+              <div className="flex bg-background border border-border rounded-lg p-0.5 shadow-sm shrink-0">
+                <button
+                  onClick={() => updateSettings({ ...settings, closeWindowAfterArchiving: false })}
+                  className={cn(
+                    "px-3 py-1.5 text-[11px] font-semibold rounded-md transition-all duration-200",
+                    !settings.closeWindowAfterArchiving
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  )}
+                >
+                  Keep Open
+                </button>
+                <button
+                  onClick={() => updateSettings({ ...settings, closeWindowAfterArchiving: true })}
+                  className={cn(
+                    "px-3 py-1.5 text-[11px] font-semibold rounded-md transition-all duration-200",
+                    settings.closeWindowAfterArchiving
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  )}
+                >
+                  Close Window
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {archives.length > 0 && !loading && (
+        <div className="px-4 py-2 border-b border-border bg-muted/20 flex items-center justify-between">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Order by</span>
+          <div className="flex items-center gap-2">
+            <div className="flex bg-background border border-border rounded-md p-0.5 shadow-sm">
+              <button
+                onClick={() => updateSettings({ ...settings, sortField: 'date' })}
+                className={cn(
+                  "px-2 py-0.5 text-[10px] font-medium rounded transition-all",
+                  settings.sortField === 'date'
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                title="Sort by Date"
+              >
+                Date
+              </button>
+              <button
+                onClick={() => updateSettings({ ...settings, sortField: 'name' })}
+                className={cn(
+                  "px-2 py-0.5 text-[10px] font-medium rounded transition-all",
+                  settings.sortField === 'name'
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                title="Sort by Name"
+              >
+                Name
+              </button>
+            </div>
+            <button
+              onClick={() => updateSettings({ ...settings, sortOrder: settings.sortOrder === 'asc' ? 'desc' : 'asc' })}
+              className="flex items-center justify-center h-6 w-6 rounded-md border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-accent transition-all shadow-sm"
+              title={settings.sortOrder === 'asc' ? "Ascending" : "Descending"}
+            >
+              {settings.sortOrder === 'asc' ? <SortAsc className="w-3 h-3" /> : <SortDesc className="w-3 h-3" />}
+            </button>
           </div>
         </div>
       )}
@@ -186,7 +268,15 @@ export default function App() {
             </div>
           ) : (
             <div className="flex flex-col gap-3">
-              {archives.map((archive) => (
+              {[...archives].sort((a, b) => {
+                let comparison = 0;
+                if (settings.sortField === 'date') {
+                  comparison = a.createdAt - b.createdAt;
+                } else {
+                  comparison = a.name.localeCompare(b.name);
+                }
+                return settings.sortOrder === 'desc' ? -comparison : comparison;
+              }).map((archive) => (
                 <div key={archive.id} className="group flex flex-col p-3 rounded-lg border border-border bg-card text-card-foreground shadow-sm hover:border-primary/50 hover:shadow-md transition-all">
                   <div className="flex items-start justify-between mb-2 gap-2">
                     {editingId === archive.id ? (
