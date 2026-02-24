@@ -153,7 +153,7 @@ export default function App() {
                           <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => handleRestore(archive.id, false)} title="Open in New Window (Keep Archive)">
                             <ExternalLink className="w-3.5 h-3.5" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-primary hover:bg-primary/20 bg-primary/10" onClick={() => handleRestore(archive.id, true)} title="Restore & Delete Archive">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => handleRestore(archive.id, true)} title="Restore & Delete Archive">
                             <ArchiveRestore className="w-3.5 h-3.5" />
                           </Button>
                           <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(archive.id)} title="Delete Archive Only">
