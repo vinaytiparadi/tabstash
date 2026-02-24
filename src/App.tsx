@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Archive, Trash2, ExternalLink, PackageOpen, Loader2, Pencil, Check, X, ArrowUpRight } from "lucide-react";
+import { Archive, Trash2, ExternalLink, PackageOpen, Loader2, Pencil, Check, X, ArchiveRestore } from "lucide-react";
 import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
 import { cn } from "./lib/utils";
 import type { Archive as ArchiveType } from "./background";
@@ -123,7 +123,7 @@ export default function App() {
             <div className="flex flex-col gap-3">
               {archives.map((archive) => (
                 <div key={archive.id} className="group flex flex-col p-3 rounded-lg border border-border bg-card text-card-foreground shadow-sm hover:border-primary/50 hover:shadow-md transition-all">
-                  <div className="flex items-center justify-between mb-2 gap-2">
+                  <div className="flex items-start justify-between mb-2 gap-2">
                     {editingId === archive.id ? (
                       <div className="flex items-center gap-1 w-full">
                         <input
@@ -143,20 +143,20 @@ export default function App() {
                       </div>
                     ) : (
                       <>
-                        <div className="flex items-center gap-1 overflow-hidden">
-                          <h3 className="font-medium text-sm truncate" title={archive.name}>{archive.name}</h3>
-                          <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" onClick={() => startEditing(archive)}>
-                            <Pencil className="w-3 h-3 text-muted-foreground" />
-                          </Button>
+                        <div className="flex flex-1 min-w-0 items-start">
+                          <h3 className="font-medium text-sm line-clamp-3 break-words pr-2" title={archive.name} style={{ wordBreak: 'break-word' }}>{archive.name}</h3>
                         </div>
-                        <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleRestore(archive.id, false)} title="Restore & Keep">
+                        <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 -mt-1">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => startEditing(archive)} title="Rename Archive">
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => handleRestore(archive.id, false)} title="Open in New Window (Keep Archive)">
                             <ExternalLink className="w-3.5 h-3.5" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-primary hover:bg-primary/10" onClick={() => handleRestore(archive.id, true)} title="Restore & Clear">
-                            <ArrowUpRight className="w-3.5 h-3.5" />
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-primary hover:bg-primary/20 bg-primary/10" onClick={() => handleRestore(archive.id, true)} title="Restore & Delete Archive">
+                            <ArchiveRestore className="w-3.5 h-3.5" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(archive.id)} title="Delete Archive">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(archive.id)} title="Delete Archive Only">
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>
                         </div>
