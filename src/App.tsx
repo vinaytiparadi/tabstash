@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Archive, Trash2, ExternalLink, PackageOpen, Loader2, Pencil, Check, X, ArchiveRestore } from "lucide-react";
+import { Archive, Trash2, ExternalLink, PackageOpen, Loader2, Pencil, Check, X, ArchiveRestore, Settings } from "lucide-react";
 import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
 import { cn } from "./lib/utils";
 import type { Archive as ArchiveType } from "./background";
@@ -11,11 +11,13 @@ const Button = ({ className, variant = "default", size = "default", ...props }: 
     destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
     outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
     ghost: "hover:bg-accent hover:text-accent-foreground",
+    secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
   };
   const sizes: any = {
     default: "h-10 px-4 py-2",
     sm: "h-9 rounded-md px-3",
     icon: "h-10 w-10",
+    xs: "h-7 px-2 text-xs",
   };
   return (
     <button
@@ -34,15 +36,25 @@ export default function App() {
   const [archives, setArchives] = useState<ArchiveType[]>([]);
   const [loading, setLoading] = useState(true);
   const [archiving, setArchiving] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [settings, setSettings] = useState({ restoreInNewWindow: true });
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
 
   const loadArchives = () => {
-    chrome.storage.local.get("archives", (data: any) => {
+    chrome.storage.local.get(["archives", "settings"], (data: any) => {
       setArchives(data.archives || []);
+      if (data.settings) {
+        setSettings(data.settings);
+      }
       setLoading(false);
     });
+  };
+
+  const updateSettings = async (newSettings: any) => {
+    setSettings(newSettings);
+    await chrome.storage.local.set({ settings: newSettings });
   };
 
   const startEditing = (archive: ArchiveType) => {
@@ -68,8 +80,6 @@ export default function App() {
   const handleArchive = async () => {
     setArchiving(true);
     await chrome.runtime.sendMessage({ action: "archive_window", name: "" });
-    // Data is updated in storage, list reload is not strictly needed if popup closes, 
-    // but useful in case it stays open.
     loadArchives();
     setArchiving(false);
   };
@@ -97,11 +107,66 @@ export default function App() {
             <p className="text-xs text-muted-foreground">{archives.length} saved sessions</p>
           </div>
         </div>
-        <Button onClick={handleArchive} disabled={archiving} size="sm" className="gap-2 shadow-sm">
-          {archiving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Archive className="w-4 h-4" />}
-          Sweep Tabs
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn("h-9 w-9", showSettings && "bg-accent")}
+            onClick={() => setShowSettings(!showSettings)}
+            title="Settings"
+          >
+            <Settings className="w-5 h-5 text-muted-foreground" />
+          </Button>
+          <Button onClick={handleArchive} disabled={archiving} size="sm" className="gap-2 shadow-sm">
+            {archiving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Archive className="w-4 h-4" />}
+            Sweep Tabs
+          </Button>
+        </div>
       </header>
+
+      {showSettings && (
+        <div className="p-4 bg-muted/40 border-b border-border animate-in slide-in-from-top duration-200">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="p-1 rounded bg-primary/10">
+              <Settings className="w-3.5 h-3.5 text-primary" />
+            </div>
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">General Settings</h2>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex-1">
+                <p className="text-sm font-medium leading-none mb-1">Restore behavior</p>
+                <p className="text-[11px] text-muted-foreground leading-tight">Where to open your saved tab archives</p>
+              </div>
+              <div className="flex bg-background border border-border rounded-lg p-0.5 shadow-sm shrink-0">
+                <button
+                  onClick={() => updateSettings({ ...settings, restoreInNewWindow: true })}
+                  className={cn(
+                    "px-3 py-1.5 text-[11px] font-semibold rounded-md transition-all duration-200",
+                    settings.restoreInNewWindow
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  )}
+                >
+                  New Window
+                </button>
+                <button
+                  onClick={() => updateSettings({ ...settings, restoreInNewWindow: false })}
+                  className={cn(
+                    "px-3 py-1.5 text-[11px] font-semibold rounded-md transition-all duration-200",
+                    !settings.restoreInNewWindow
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  )}
+                >
+                  Same Window
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <ScrollAreaPrimitive.Root className="flex-1 overflow-hidden" type="scroll">
         <ScrollAreaPrimitive.Viewport className="w-full h-full p-4">
@@ -150,10 +215,10 @@ export default function App() {
                           <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => startEditing(archive)} title="Rename Archive">
                             <Pencil className="w-3.5 h-3.5" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => handleRestore(archive.id, false)} title="Open in New Window (Keep Archive)">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => handleRestore(archive.id, false)} title={settings.restoreInNewWindow ? "Open in New Window (Keep Archive)" : "Open in Current Window (Keep Archive)"}>
                             <ExternalLink className="w-3.5 h-3.5" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => handleRestore(archive.id, true)} title="Restore & Delete Archive">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => handleRestore(archive.id, true)} title={settings.restoreInNewWindow ? "Restore & Delete Archive (New Window)" : "Restore & Delete Archive (Current Window)"}>
                             <ArchiveRestore className="w-3.5 h-3.5" />
                           </Button>
                           <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(archive.id)} title="Delete Archive Only">

@@ -11,6 +11,10 @@ export interface Archive {
     tabs: TabInfo[];
 }
 
+export interface Settings {
+    restoreInNewWindow: boolean;
+}
+
 // Helper to sweep and archive current window
 async function archiveCurrentWindow(name: string) {
     const tabs = await chrome.tabs.query({ currentWindow: true });
@@ -48,15 +52,24 @@ async function archiveCurrentWindow(name: string) {
 
 // Restore an archive
 async function restoreArchive(archiveId: string, removeAfter: boolean = false) {
-    const data = await chrome.storage.local.get("archives");
+    const data = await chrome.storage.local.get(["archives", "settings"]);
     const archives: Archive[] = (data.archives as Archive[]) || [];
+    const settings = (data.settings as Settings) || { restoreInNewWindow: true };
     const archive = archives.find((a) => a.id === archiveId);
 
     if (!archive) return;
 
-    // Create new window with the tabs
     const urls = archive.tabs.map((t: TabInfo) => t.url);
-    await chrome.windows.create({ url: urls });
+
+    if (settings.restoreInNewWindow) {
+        // Create new window with the tabs
+        await chrome.windows.create({ url: urls });
+    } else {
+        // Open in current window
+        for (const url of urls) {
+            await chrome.tabs.create({ url });
+        }
+    }
 
     // Optionally remove the archive
     if (removeAfter) {
