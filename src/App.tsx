@@ -93,7 +93,7 @@ export default function App() {
             <PackageOpen className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h1 className="font-semibold text-base leading-tight">Quick Archive</h1>
+            <h1 className="font-semibold text-base leading-tight">TabStash</h1>
             <p className="text-xs text-muted-foreground">{archives.length} saved sessions</p>
           </div>
         </div>

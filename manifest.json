@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "Quick Archive",
+    "name": "TabStash",
     "version": "1.0.0",
     "description": "Archive your open tabs and restore them later instantly.",
     "action": {

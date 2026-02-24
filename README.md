@@ -1,6 +1,6 @@
-# Quick Archive Browser Extension
+# TabStash Browser Extension
 
-Quick Archive is a premium, modern browser extension designed to instantly save your open tabs and restore them later. It helps you keep your browser uncluttered while ensuring you never lose important research or sessions.
+TabStash is a premium, modern browser extension designed to instantly save your open tabs and restore them later. It helps you keep your browser uncluttered while ensuring you never lose important research or sessions.
 
 ## Features
 - **Instant Sweep**: Close and save all your current tabs with a single click.
@@ -26,11 +26,11 @@ This will compile the extension and generate a `dist` folder.
 2. Turn on **Developer mode** (usually a toggle in the top right corner or left sidebar).
 3. Click the **"Load unpacked"** button.
 4. Select the `dist` folder located inside your `d:\Dev\quick_archive` directory.
-5. The **Quick Archive** extension will now appear in your list of extensions!
+5. The **TabStash** extension will now appear in your list of extensions!
 
 ### 3. Usage
-- Click the extension puzzle piece icon in your browser toolbar and pin **Quick Archive**.
-- Click the **Quick Archive** icon to open the popup.
+- Click the extension puzzle piece icon in your browser toolbar and pin **TabStash**.
+- Click the **TabStash** icon to open the popup.
 - Click **"Sweep Tabs"** to archive your current window.
 - To restore tabs, click the **Restore Session** icon (the external link icon) on any of your saved archive cards.
 
