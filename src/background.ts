@@ -9,6 +9,7 @@ export interface Archive {
     name: string;
     createdAt: number;
     tabs: TabInfo[];
+    pinned?: boolean;
 }
 
 export interface Settings {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Archive, Trash2, ExternalLink, PackageOpen, Loader2, Pencil, Check, X, ArchiveRestore, Settings, SortAsc, SortDesc } from "lucide-react";
+import { Archive, Trash2, ExternalLink, PackageOpen, Loader2, Pencil, Check, X, ArchiveRestore, Settings, SortAsc, SortDesc, Pin } from "lucide-react";
 import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
 import { cn } from "./lib/utils";
 import type { Archive as ArchiveType } from "./background";
@@ -101,6 +101,17 @@ export default function App() {
 
   const handleDelete = async (id: string) => {
     const updated = archives.filter((a) => a.id !== id);
+    await chrome.storage.local.set({ archives: updated });
+    setArchives(updated);
+  };
+
+  const togglePin = async (id: string) => {
+    const updated = archives.map((a) => {
+      if (a.id === id) {
+        return { ...a, pinned: !a.pinned };
+      }
+      return a;
+    });
     await chrome.storage.local.set({ archives: updated });
     setArchives(updated);
   };
@@ -269,6 +280,10 @@ export default function App() {
           ) : (
             <div className="flex flex-col gap-3">
               {[...archives].sort((a, b) => {
+                // Pin logic: pinned items always come first
+                if (a.pinned && !b.pinned) return -1;
+                if (!a.pinned && b.pinned) return 1;
+
                 let comparison = 0;
                 if (settings.sortField === 'date') {
                   comparison = a.createdAt - b.createdAt;
@@ -277,7 +292,12 @@ export default function App() {
                 }
                 return settings.sortOrder === 'desc' ? -comparison : comparison;
               }).map((archive) => (
-                <div key={archive.id} className="group flex flex-col p-3 rounded-lg border border-border bg-card text-card-foreground shadow-sm hover:border-primary/50 hover:shadow-md transition-all">
+                <div key={archive.id} className={cn(
+                  "group flex flex-col p-3 rounded-lg border shadow-sm transition-all",
+                  archive.pinned
+                    ? "border-primary/40 bg-primary/[0.03] hover:border-primary/60"
+                    : "border-border bg-card hover:border-primary/50 hover:shadow-md"
+                )}>
                   <div className="flex items-start justify-between mb-2 gap-2">
                     {editingId === archive.id ? (
                       <div className="flex items-center gap-1 w-full">
@@ -298,10 +318,20 @@ export default function App() {
                       </div>
                     ) : (
                       <>
-                        <div className="flex flex-1 min-w-0 items-start">
+                        <div className="flex flex-1 min-w-0 items-center gap-1.5">
+                          {archive.pinned && <Pin className="w-3.5 h-3.5 text-primary shrink-0 fill-primary/10" />}
                           <h3 className="font-medium text-sm line-clamp-3 break-words pr-2" title={archive.name} style={{ wordBreak: 'break-word' }}>{archive.name}</h3>
                         </div>
                         <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 -mt-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={cn("h-7 w-7", archive.pinned ? "text-primary hover:text-primary/80" : "text-muted-foreground hover:text-foreground")}
+                            onClick={() => togglePin(archive.id)}
+                            title={archive.pinned ? "Unpin Archive" : "Pin Archive"}
+                          >
+                            <Pin className={cn("w-3.5 h-3.5", archive.pinned && "fill-current")} />
+                          </Button>
                           <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => startEditing(archive)} title="Rename Archive">
                             <Pencil className="w-3.5 h-3.5" />
                           </Button>
