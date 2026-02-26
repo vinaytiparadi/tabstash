@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Archive, Trash2, ExternalLink, PackageOpen, Loader2, Pencil, Check, X, ArchiveRestore, Settings, SortAsc, SortDesc, Pin } from "lucide-react";
+import { Archive, Trash2, ExternalLink, PackageOpen, Loader2, Pencil, Check, X, ArchiveRestore, Settings, SortAsc, SortDesc, Pin, Sun, Moon, Monitor } from "lucide-react";
 import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
 import { cn } from "./lib/utils";
 import type { Archive as ArchiveType } from "./background";
@@ -41,7 +41,8 @@ export default function App() {
     restoreInNewWindow: true,
     closeWindowAfterArchiving: false,
     sortField: 'date' as 'date' | 'name',
-    sortOrder: 'desc' as 'asc' | 'desc'
+    sortOrder: 'desc' as 'asc' | 'desc',
+    theme: 'system' as 'light' | 'dark' | 'system'
   });
 
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -56,6 +57,7 @@ export default function App() {
           closeWindowAfterArchiving: data.settings.closeWindowAfterArchiving ?? false,
           sortField: data.settings.sortField ?? 'date',
           sortOrder: data.settings.sortOrder ?? 'desc',
+          theme: data.settings.theme ?? 'system',
         });
       }
       setLoading(false);
@@ -86,6 +88,30 @@ export default function App() {
   useEffect(() => {
     loadArchives();
   }, []);
+
+  useEffect(() => {
+    const applyTheme = () => {
+      const root = window.document.documentElement;
+      root.classList.remove("light", "dark");
+
+      if (settings.theme === "system") {
+        const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        root.classList.add(systemTheme);
+        return;
+      }
+
+      root.classList.add(settings.theme);
+    };
+
+    applyTheme();
+
+    if (settings.theme === "system") {
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      const handleChange = () => applyTheme();
+      mediaQuery.addEventListener("change", handleChange);
+      return () => mediaQuery.removeEventListener("change", handleChange);
+    }
+  }, [settings.theme]);
 
   const handleArchive = async () => {
     setArchiving(true);
@@ -216,6 +242,52 @@ export default function App() {
                 </button>
               </div>
             </div>
+
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex-1">
+                <p className="text-sm font-medium leading-none mb-1">Theme</p>
+                <p className="text-[11px] text-muted-foreground leading-tight">Select your application theme</p>
+              </div>
+              <div className="flex bg-background border border-border rounded-lg p-0.5 shadow-sm shrink-0">
+                <button
+                  onClick={() => updateSettings({ ...settings, theme: 'light' })}
+                  className={cn(
+                    "px-2 py-1 flex items-center justify-center rounded-md transition-all duration-200",
+                    settings.theme === 'light'
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  )}
+                  title="Light mode"
+                >
+                  <Sun className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => updateSettings({ ...settings, theme: 'dark' })}
+                  className={cn(
+                    "px-2 py-1 flex items-center justify-center rounded-md transition-all duration-200",
+                    settings.theme === 'dark'
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  )}
+                  title="Dark mode"
+                >
+                  <Moon className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => updateSettings({ ...settings, theme: 'system' })}
+                  className={cn(
+                    "px-2 py-1 flex items-center justify-center rounded-md transition-all duration-200",
+                    settings.theme === 'system'
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  )}
+                  title="System theme"
+                >
+                  <Monitor className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>
       )}
