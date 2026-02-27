@@ -661,6 +661,9 @@ export default function App() {
           <ScrollAreaPrimitive.Thumb className="relative flex-1 rounded-full bg-border hover:bg-muted-foreground/50 transition-colors" />
         </ScrollAreaPrimitive.Scrollbar>
       </ScrollAreaPrimitive.Root>
+      <div className="px-4 py-1.5 border-t border-border text-center">
+        <p className="text-[9px] text-muted-foreground/60">Built with ❤️ by Vinay Tiparadi</p>
+      </div>
     </div>
   );
 }
