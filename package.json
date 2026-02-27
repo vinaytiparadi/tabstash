@@ -1,7 +1,7 @@
 {
   "name": "tabstash",
   "private": true,
-  "version": "1.0.3",
+  "version": "1.1.0",
   "author": "Vinay Tiparadi",
   "type": "module",
   "scripts": {

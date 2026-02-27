@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Archive, Trash2, ExternalLink, PackageOpen, Loader2, Pencil, Check, X, ArchiveRestore, Settings, SortAsc, SortDesc, Pin, Sun, Moon, Monitor } from "lucide-react";
+import { Archive, Trash2, ExternalLink, PackageOpen, Loader2, Pencil, Check, X, ArchiveRestore, Settings, SortAsc, SortDesc, Pin, Sun, Moon, Monitor, ChevronDown, ChevronUp, Plus, Globe } from "lucide-react";
 import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
 import { cn } from "./lib/utils";
 import type { Archive as ArchiveType } from "./background";
@@ -47,6 +47,10 @@ export default function App() {
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const [expandedArchives, setExpandedArchives] = useState<Set<string>>(new Set());
+  const [newTabUrls, setNewTabUrls] = useState<Record<string, string>>({});
+  const [tabPickerArchiveId, setTabPickerArchiveId] = useState<string | null>(null);
+  const [openBrowserTabs, setOpenBrowserTabs] = useState<chrome.tabs.Tab[]>([]);
 
   const loadArchives = () => {
     chrome.storage.local.get(["archives", "settings"], (data: any) => {
@@ -140,6 +144,111 @@ export default function App() {
     });
     await chrome.storage.local.set({ archives: updated });
     setArchives(updated);
+  };
+
+  const toggleExpand = (id: string) => {
+    setExpandedArchives((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const removeTabFromArchive = async (archiveId: string, tabIndex: number) => {
+    const archive = archives.find(a => a.id === archiveId);
+    if (!archive) return;
+
+    const updatedTabs = [...archive.tabs];
+    updatedTabs.splice(tabIndex, 1);
+
+    let updatedArchives;
+    if (updatedTabs.length === 0) {
+      updatedArchives = archives.filter(a => a.id !== archiveId);
+    } else {
+      updatedArchives = archives.map(a =>
+        a.id === archiveId ? { ...a, tabs: updatedTabs } : a
+      );
+    }
+
+    await chrome.storage.local.set({ archives: updatedArchives });
+    setArchives(updatedArchives);
+  };
+
+  const addCurrentTabToArchive = async (archiveId: string) => {
+    const archive = archives.find(a => a.id === archiveId);
+    if (!archive) return;
+
+    const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!activeTab || !activeTab.url) return;
+
+    const newTab = {
+      url: activeTab.url,
+      title: activeTab.title || "Untitled",
+      favIconUrl: activeTab.favIconUrl,
+    };
+
+    const updatedArchives = archives.map(a =>
+      a.id === archiveId ? { ...a, tabs: [...a.tabs, newTab] } : a
+    );
+
+    await chrome.storage.local.set({ archives: updatedArchives });
+    setArchives(updatedArchives);
+  };
+
+  const addCustomUrlToArchive = async (archiveId: string, url: string) => {
+    if (!url.trim()) return;
+
+    let validUrl = url.trim();
+    if (!validUrl.startsWith('http://') && !validUrl.startsWith('https://')) {
+      validUrl = 'https://' + validUrl;
+    }
+
+    const archive = archives.find(a => a.id === archiveId);
+    if (!archive) return;
+
+    const newTab = {
+      url: validUrl,
+      title: validUrl,
+    };
+
+    const updatedArchives = archives.map(a =>
+      a.id === archiveId ? { ...a, tabs: [...a.tabs, newTab] } : a
+    );
+
+    await chrome.storage.local.set({ archives: updatedArchives });
+    setArchives(updatedArchives);
+
+    setNewTabUrls(prev => ({ ...prev, [archiveId]: "" }));
+  };
+
+  const openTabPicker = async (archiveId: string) => {
+    if (tabPickerArchiveId === archiveId) {
+      setTabPickerArchiveId(null);
+      return;
+    }
+    const tabs = await chrome.tabs.query({});
+    const filtered = tabs.filter(t => t.url && !t.url.startsWith('chrome://'));
+    setOpenBrowserTabs(filtered);
+    setTabPickerArchiveId(archiveId);
+  };
+
+  const addOpenTabToArchive = async (archiveId: string, browserTab: chrome.tabs.Tab) => {
+    const archive = archives.find(a => a.id === archiveId);
+    if (!archive || !browserTab.url) return;
+
+    const newTab = {
+      url: browserTab.url,
+      title: browserTab.title || "Untitled",
+      favIconUrl: browserTab.favIconUrl,
+    };
+
+    const updatedArchives = archives.map(a =>
+      a.id === archiveId ? { ...a, tabs: [...a.tabs, newTab] } : a
+    );
+
+    await chrome.storage.local.set({ archives: updatedArchives });
+    setArchives(updatedArchives);
   };
 
   return (
@@ -334,7 +443,7 @@ export default function App() {
       )}
 
       <ScrollAreaPrimitive.Root className="flex-1 overflow-hidden" type="scroll">
-        <ScrollAreaPrimitive.Viewport className="w-full h-full p-4">
+        <ScrollAreaPrimitive.Viewport className="w-full h-full p-4 [&>div]:!block overflow-x-hidden">
           {loading ? (
             <div className="flex items-center justify-center h-40">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -365,7 +474,7 @@ export default function App() {
                 return settings.sortOrder === 'desc' ? -comparison : comparison;
               }).map((archive) => (
                 <div key={archive.id} className={cn(
-                  "group flex flex-col p-3 rounded-lg border shadow-sm transition-all",
+                  "group flex flex-col p-3 rounded-lg border shadow-sm transition-all overflow-hidden",
                   archive.pinned
                     ? "border-primary/40 bg-primary/[0.03] hover:border-primary/60"
                     : "border-border bg-card hover:border-primary/50 hover:shadow-md"
@@ -438,8 +547,111 @@ export default function App() {
                         </div>
                       )}
                     </div>
-                    <span>{new Date(archive.createdAt).toLocaleDateString()}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span>{new Date(archive.createdAt).toLocaleDateString()}</span>
+                      <button
+                        onClick={() => toggleExpand(archive.id)}
+                        className="flex items-center justify-center h-5 w-5 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                        title={expandedArchives.has(archive.id) ? "Collapse tabs" : "Expand tabs"}
+                      >
+                        {expandedArchives.has(archive.id) ? (
+                          <ChevronUp className="w-3.5 h-3.5" />
+                        ) : (
+                          <ChevronDown className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </div>
                   </div>
+
+                  {expandedArchives.has(archive.id) && (
+                    <div className="mt-2 space-y-2 border-t border-border pt-2 overflow-hidden">
+                      <div className="space-y-1 max-h-[200px] overflow-y-auto">
+                        {archive.tabs.map((tab, i) => (
+                          <div key={i} className="flex items-center justify-between gap-2 p-1.5 rounded-md hover:bg-muted/50 group/tab overflow-hidden">
+                            <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+                              {tab.favIconUrl ? (
+                                <img src={tab.favIconUrl} alt="" className="w-3.5 h-3.5 object-contain shrink-0" />
+                              ) : (
+                                <div className="w-3.5 h-3.5 bg-muted-foreground/30 rounded-full shrink-0" />
+                              )}
+                              <a href={tab.url} target="_blank" rel="noreferrer" className="block text-xs text-muted-foreground hover:text-foreground hover:underline truncate min-w-0" title={tab.title || tab.url}>
+                                {tab.title || tab.url}
+                              </a>
+                            </div>
+                            <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover/tab:opacity-100 text-muted-foreground hover:text-destructive shrink-0" onClick={() => removeTabFromArchive(archive.id, i)} title="Remove Tab">
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="flex flex-col gap-2 pt-1 border-t border-border/50 overflow-hidden">
+                        <div className="flex items-center gap-1.5">
+                          <Button
+                            variant="secondary"
+                            size="xs"
+                            className="flex-1 text-[10px] h-6 flex items-center gap-1 justify-center"
+                            onClick={() => addCurrentTabToArchive(archive.id)}
+                          >
+                            <Plus className="w-3 h-3" /> Add Current Tab
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="xs"
+                            className={cn(
+                              "flex-1 text-[10px] h-6 flex items-center gap-1 justify-center",
+                              tabPickerArchiveId === archive.id && "bg-accent"
+                            )}
+                            onClick={() => openTabPicker(archive.id)}
+                          >
+                            <Globe className="w-3 h-3" /> Open Tabs
+                          </Button>
+                        </div>
+                        <div className="flex items-center gap-1 overflow-hidden">
+                          <input
+                            type="text"
+                            placeholder="Add custom URL..."
+                            value={newTabUrls[archive.id] || ""}
+                            onChange={(e) => setNewTabUrls(prev => ({ ...prev, [archive.id]: e.target.value }))}
+                            onKeyDown={(e) => { if (e.key === 'Enter') addCustomUrlToArchive(archive.id, newTabUrls[archive.id] || ""); }}
+                            className="flex-1 min-w-0 bg-background border border-border text-[10px] rounded px-2 py-1 outline-none focus:border-ring h-6"
+                          />
+                          <Button
+                            variant="default"
+                            size="icon"
+                            className="h-6 w-6 shrink-0"
+                            onClick={() => addCustomUrlToArchive(archive.id, newTabUrls[archive.id] || "")}
+                            disabled={!newTabUrls[archive.id]?.trim()}
+                          >
+                            <Plus className="w-3 h-3" />
+                          </Button>
+                        </div>
+                        {tabPickerArchiveId === archive.id && (
+                          <div className="space-y-0.5 max-h-[150px] overflow-y-auto rounded border border-border bg-background p-1">
+                            {openBrowserTabs.length === 0 ? (
+                              <p className="text-[10px] text-muted-foreground text-center py-2">No open tabs found</p>
+                            ) : (
+                              openBrowserTabs.map((bt) => (
+                                <button
+                                  key={bt.id}
+                                  className="flex items-center gap-2 w-full p-1.5 rounded hover:bg-accent text-left overflow-hidden transition-colors"
+                                  onClick={() => addOpenTabToArchive(archive.id, bt)}
+                                  title={bt.title || bt.url}
+                                >
+                                  {bt.favIconUrl ? (
+                                    <img src={bt.favIconUrl} alt="" className="w-3.5 h-3.5 object-contain shrink-0" />
+                                  ) : (
+                                    <div className="w-3.5 h-3.5 bg-muted-foreground/30 rounded-full shrink-0" />
+                                  )}
+                                  <span className="text-[10px] text-foreground truncate min-w-0">{bt.title || bt.url}</span>
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
