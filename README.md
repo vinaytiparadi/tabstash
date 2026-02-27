@@ -2,6 +2,16 @@
 
 TabStash is a premium, modern browser extension designed to instantly save your open tabs and restore them later. It helps you keep your browser uncluttered while ensuring you never lose important research or sessions.
 
+## Screenshots
+
+<p align="center">
+  <img src="public/showcase/showcase1.png" width="32%" alt="TabStash Screenshot 1" />
+  &nbsp;
+  <img src="public/showcase/showcase2.png" width="32%" alt="TabStash Screenshot 2" />
+  &nbsp;
+  <img src="public/showcase/showcase3.png" width="32%" alt="TabStash Screenshot 3" />
+</p>
+
 ## Features
 - **Instant Sweep**: Close and save all your current tabs with a single click.
 - **Session Management**: View, restore, or delete past sessions in a clean, dark-mode GUI.
