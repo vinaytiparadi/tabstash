@@ -5,6 +5,11 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
 
 jobs:
   build:
@@ -12,6 +17,15 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Set Release Tag
+        id: vars
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -32,21 +46,21 @@ jobs:
       - name: Zip extension
         run: |
           cd dist
-          zip -r ../tabstash-${{ github.ref_name }}.zip .
+          zip -r ../tabstash-${{ steps.vars.outputs.tag }}.zip .
 
       - name: Generate Changelog
         id: changelog
         shell: bash
         run: |
           # Get the previous tag
-          PREV_TAG=$(git describe --tags --abbrev=0 ${{ github.ref_name }}^ 2>/dev/null || echo "")
+          PREV_TAG=$(git describe --tags --abbrev=0 ${{ steps.vars.outputs.tag }}^ 2>/dev/null || echo "")
           
           if [ -z "$PREV_TAG" ]; then
             echo "No previous tag found, getting all commits."
             CHANGES=$(git log --pretty=format:"* %s (%h)" --no-merges)
           else
             echo "Previous tag: $PREV_TAG"
-            CHANGES=$(git log --pretty=format:"* %s (%h)" $PREV_TAG..${{ github.ref_name }} --no-merges)
+            CHANGES=$(git log --pretty=format:"* %s (%h)" $PREV_TAG..${{ steps.vars.outputs.tag }} --no-merges)
           fi
           
           # Escape changes for output
@@ -57,7 +71,8 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: tabstash-${{ github.ref_name }}.zip
+          tag_name: ${{ steps.vars.outputs.tag }}
+          files: tabstash-${{ steps.vars.outputs.tag }}.zip
           body: |
             ## What's Changed
             ${{ steps.changelog.outputs.CHANGES }}
