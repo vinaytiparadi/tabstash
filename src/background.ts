@@ -23,7 +23,7 @@ async function archiveCurrentWindow(name: string) {
 
     // Get current settings
     const dataSettings = await chrome.storage.local.get("settings");
-    const settings = (dataSettings.settings as Settings) || { restoreInNewWindow: true, closeWindowAfterArchiving: false };
+    const settings = (dataSettings.settings as Settings) || { restoreInNewWindow: false, closeWindowAfterArchiving: false };
 
     // Filter out the new tab page or extension pages if desired, but for now we keep all except maybe chrome:// pages if not allowed
     const tabInfos: TabInfo[] = tabs
@@ -56,12 +56,7 @@ async function archiveCurrentWindow(name: string) {
             await chrome.windows.remove(currentWindow.id);
         }
     } else {
-        // Keep window open: Open a new tab so the window doesn't close
-        await chrome.tabs.create({});
-
-        // Close all old tabs
-        const tabIds = tabs.map((t: chrome.tabs.Tab) => t.id).filter((id: number | undefined) => id !== undefined) as number[];
-        await chrome.tabs.remove(tabIds);
+        // Keep window open: Do nothing to the existing tabs
     }
 }
 
@@ -69,7 +64,7 @@ async function archiveCurrentWindow(name: string) {
 async function restoreArchive(archiveId: string, removeAfter: boolean = false) {
     const data = await chrome.storage.local.get(["archives", "settings"]);
     const archives: Archive[] = (data.archives as Archive[]) || [];
-    const settings = (data.settings as Settings) || { restoreInNewWindow: true, closeWindowAfterArchiving: false };
+    const settings = (data.settings as Settings) || { restoreInNewWindow: false, closeWindowAfterArchiving: false };
     const archive = archives.find((a) => a.id === archiveId);
 
     if (!archive) return;

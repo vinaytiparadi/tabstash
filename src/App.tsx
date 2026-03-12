@@ -38,7 +38,7 @@ export default function App() {
   const [archiving, setArchiving] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState({
-    restoreInNewWindow: true,
+    restoreInNewWindow: false,
     closeWindowAfterArchiving: false,
     sortField: 'date' as 'date' | 'name',
     sortOrder: 'desc' as 'asc' | 'desc',
@@ -57,7 +57,7 @@ export default function App() {
       setArchives(data.archives || []);
       if (data.settings) {
         setSettings({
-          restoreInNewWindow: data.settings.restoreInNewWindow ?? true,
+          restoreInNewWindow: data.settings.restoreInNewWindow ?? false,
           closeWindowAfterArchiving: data.settings.closeWindowAfterArchiving ?? false,
           sortField: data.settings.sortField ?? 'date',
           sortOrder: data.settings.sortOrder ?? 'desc',
@@ -297,17 +297,6 @@ export default function App() {
               </div>
               <div className="flex bg-background border border-border rounded-lg p-0.5 shadow-sm shrink-0">
                 <button
-                  onClick={() => updateSettings({ ...settings, restoreInNewWindow: true })}
-                  className={cn(
-                    "px-3 py-1.5 text-[11px] font-semibold rounded-md transition-all duration-200",
-                    settings.restoreInNewWindow
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                  )}
-                >
-                  New Window
-                </button>
-                <button
                   onClick={() => updateSettings({ ...settings, restoreInNewWindow: false })}
                   className={cn(
                     "px-3 py-1.5 text-[11px] font-semibold rounded-md transition-all duration-200",
@@ -317,6 +306,17 @@ export default function App() {
                   )}
                 >
                   Same Window
+                </button>
+                <button
+                  onClick={() => updateSettings({ ...settings, restoreInNewWindow: true })}
+                  className={cn(
+                    "px-3 py-1.5 text-[11px] font-semibold rounded-md transition-all duration-200",
+                    settings.restoreInNewWindow
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  )}
+                >
+                  New Window
                 </button>
               </div>
             </div>
