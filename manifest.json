@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "TabStash",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "author": {
         "name": "Vinay Tiparadi",
         "email": "vinaytiparadi123@gmail.com"

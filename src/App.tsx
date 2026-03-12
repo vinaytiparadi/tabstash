@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Archive, Trash2, ExternalLink, PackageOpen, Loader2, Pencil, Check, X, ArchiveRestore, Settings, SortAsc, SortDesc, Pin, Sun, Moon, Monitor, ChevronDown, ChevronUp, Plus, Globe, Download, Upload } from "lucide-react";
 import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
 import { cn } from "./lib/utils";
@@ -516,36 +516,6 @@ export default function App() {
             >
               {settings.sortOrder === 'asc' ? <SortAsc className="w-3 h-3" /> : <SortDesc className="w-3 h-3" />}
             </button>
-          </div>
-
-          <div className="pt-1 border-t border-border/60">
-            <div className="flex items-center gap-2 mb-2.5 mt-2">
-              <div className="p-1 rounded bg-primary/10">
-                <Download className="w-3.5 h-3.5 text-primary" />
-              </div>
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Backup & Restore</h2>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleExportBackup}
-                className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-md border border-border bg-background text-xs font-medium text-foreground hover:bg-accent hover:border-primary/40 transition-all shadow-sm"
-                title="Download all your archives as a JSON file"
-              >
-                <Download className="w-3.5 h-3.5" />
-                Export Backup
-              </button>
-              <label
-                className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-md border border-border bg-background text-xs font-medium text-foreground hover:bg-accent hover:border-primary/40 transition-all shadow-sm cursor-pointer"
-                title="Import archives from a JSON backup file"
-              >
-                <Upload className="w-3.5 h-3.5" />
-                Import Backup
-                <input type="file" accept=".json" className="hidden" onChange={handleImportBackup} />
-              </label>
-            </div>
-            {importStatus !== 'idle' && (
-              <p className={`mt-1.5 text-[10px] text-center ${importStatus === 'success' ? 'text-green-500' : 'text-destructive'}`}>{importMessage}</p>
-            )}
           </div>
         </div>
       )}
