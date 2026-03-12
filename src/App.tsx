@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Archive, Trash2, ExternalLink, PackageOpen, Loader2, Pencil, Check, X, ArchiveRestore, Settings, SortAsc, SortDesc, Pin, Sun, Moon, Monitor, ChevronDown, ChevronUp, Plus, Globe } from "lucide-react";
+﻿import { useEffect, useState } from "react";
+import { Archive, Trash2, ExternalLink, PackageOpen, Loader2, Pencil, Check, X, ArchiveRestore, Settings, SortAsc, SortDesc, Pin, Sun, Moon, Monitor, ChevronDown, ChevronUp, Plus, Globe, Download, Upload } from "lucide-react";
 import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
 import { cn } from "./lib/utils";
 import type { Archive as ArchiveType } from "./background";
@@ -51,6 +51,8 @@ export default function App() {
   const [newTabUrls, setNewTabUrls] = useState<Record<string, string>>({});
   const [tabPickerArchiveId, setTabPickerArchiveId] = useState<string | null>(null);
   const [openBrowserTabs, setOpenBrowserTabs] = useState<chrome.tabs.Tab[]>([]);
+  const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [importMessage, setImportMessage] = useState("");
 
   const loadArchives = () => {
     chrome.storage.local.get(["archives", "settings"], (data: any) => {
@@ -220,6 +222,52 @@ export default function App() {
     setArchives(updatedArchives);
 
     setNewTabUrls(prev => ({ ...prev, [archiveId]: "" }));
+  };
+
+  const handleExportBackup = async () => {
+    const data = await chrome.storage.local.get(["archives", "settings"]);
+    const backup = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      archives: data.archives || [],
+      settings: data.settings || {},
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `tabstash-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      try {
+        const raw = ev.target?.result as string;
+        const backup = JSON.parse(raw);
+        if (!Array.isArray(backup.archives)) throw new Error("Invalid backup file");
+        // Merge: add imported archives that don't already exist (by id)
+        const existing: ArchiveType[] = archives;
+        const existingIds = new Set(existing.map(a => a.id));
+        const incoming: ArchiveType[] = backup.archives.filter((a: ArchiveType) => !existingIds.has(a.id));
+        const merged = [...incoming, ...existing];
+        await chrome.storage.local.set({ archives: merged });
+        setArchives(merged);
+        setImportStatus('success');
+        setImportMessage(`Restored ${incoming.length} new archive(s).`);
+      } catch {
+        setImportStatus('error');
+        setImportMessage("Invalid backup file.");
+      }
+      setTimeout(() => { setImportStatus('idle'); setImportMessage(""); }, 3000);
+    };
+    reader.readAsText(file);
+    // reset input so same file can be re-selected
+    e.target.value = "";
   };
 
   const openTabPicker = async (archiveId: string) => {
@@ -398,6 +446,36 @@ export default function App() {
             </div>
 
           </div>
+
+          <div className="pt-1 border-t border-border/60">
+            <div className="flex items-center gap-2 mb-2.5 mt-2">
+              <div className="p-1 rounded bg-primary/10">
+                <Download className="w-3.5 h-3.5 text-primary" />
+              </div>
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Backup & Restore</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleExportBackup}
+                className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-md border border-border bg-background text-xs font-medium text-foreground hover:bg-accent hover:border-primary/40 transition-all shadow-sm"
+                title="Download all your archives as a JSON file"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Export Backup
+              </button>
+              <label
+                className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-md border border-border bg-background text-xs font-medium text-foreground hover:bg-accent hover:border-primary/40 transition-all shadow-sm cursor-pointer"
+                title="Import archives from a JSON backup file"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                Import Backup
+                <input type="file" accept=".json" className="hidden" onChange={handleImportBackup} />
+              </label>
+            </div>
+            {importStatus !== 'idle' && (
+              <p className={`mt-1.5 text-[10px] text-center ${importStatus === 'success' ? 'text-green-500' : 'text-destructive'}`}>{importMessage}</p>
+            )}
+          </div>
         </div>
       )}
 
@@ -438,6 +516,36 @@ export default function App() {
             >
               {settings.sortOrder === 'asc' ? <SortAsc className="w-3 h-3" /> : <SortDesc className="w-3 h-3" />}
             </button>
+          </div>
+
+          <div className="pt-1 border-t border-border/60">
+            <div className="flex items-center gap-2 mb-2.5 mt-2">
+              <div className="p-1 rounded bg-primary/10">
+                <Download className="w-3.5 h-3.5 text-primary" />
+              </div>
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Backup & Restore</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleExportBackup}
+                className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-md border border-border bg-background text-xs font-medium text-foreground hover:bg-accent hover:border-primary/40 transition-all shadow-sm"
+                title="Download all your archives as a JSON file"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Export Backup
+              </button>
+              <label
+                className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-md border border-border bg-background text-xs font-medium text-foreground hover:bg-accent hover:border-primary/40 transition-all shadow-sm cursor-pointer"
+                title="Import archives from a JSON backup file"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                Import Backup
+                <input type="file" accept=".json" className="hidden" onChange={handleImportBackup} />
+              </label>
+            </div>
+            {importStatus !== 'idle' && (
+              <p className={`mt-1.5 text-[10px] text-center ${importStatus === 'success' ? 'text-green-500' : 'text-destructive'}`}>{importMessage}</p>
+            )}
           </div>
         </div>
       )}

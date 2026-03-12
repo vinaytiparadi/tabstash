@@ -1,4 +1,5 @@
-name: Release
+name: Release Extension
+run-name: ${{ github.event_name == 'workflow_dispatch' && format('Release {0}', github.event.inputs.version) || github.event.head_commit.message }}
 
 on:
   push:
@@ -72,6 +73,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.vars.outputs.tag }}
+          name: TabStash ${{ steps.vars.outputs.tag }}
           files: tabstash-${{ steps.vars.outputs.tag }}.zip
           body: |
             ## What's Changed
