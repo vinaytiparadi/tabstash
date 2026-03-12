@@ -53,15 +53,18 @@ jobs:
         id: changelog
         shell: bash
         run: |
-          # Get the previous tag
-          PREV_TAG=$(git describe --tags --abbrev=0 ${{ steps.vars.outputs.tag }}^ 2>/dev/null || echo "")
+          CURRENT_TAG="${{ steps.vars.outputs.tag }}"
+          # Find the previous tag in the version-sorted list
+          PREV_TAG=$(git tag --sort=-v:refname --list 'v*' | grep -A 1 "^${CURRENT_TAG}$" | tail -n 1 | grep -v "^${CURRENT_TAG}$" || echo "")
           
           if [ -z "$PREV_TAG" ]; then
-            echo "No previous tag found, getting all commits."
-            CHANGES=$(git log --pretty=format:"* %s (%h)" --no-merges)
+            echo "No previous tag found. Showing commits for the current tag only."
+            # Fallback: just show the commits in this push (or last 5 if unknown)
+            CHANGES=$(git log --pretty=format:"* %s (%h)" -n 5 --no-merges)
           else
             echo "Previous tag: $PREV_TAG"
-            CHANGES=$(git log --pretty=format:"* %s (%h)" $PREV_TAG..${{ steps.vars.outputs.tag }} --no-merges)
+            echo "Current tag: $CURRENT_TAG"
+            CHANGES=$(git log --pretty=format:"* %s (%h)" ${PREV_TAG}..${CURRENT_TAG} --no-merges)
           fi
           
           # Escape changes for output
