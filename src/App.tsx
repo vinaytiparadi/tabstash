@@ -276,7 +276,7 @@ export default function App() {
       return;
     }
     const tabs = await chrome.tabs.query({});
-    const filtered = tabs.filter(t => t.url && !t.url.startsWith('chrome://'));
+    const filtered = tabs.filter(t => t.url && !t.url.startsWith('chrome://') && !t.url.startsWith('about:') && !t.url.startsWith('moz-extension://'));
     setOpenBrowserTabs(filtered);
     setTabPickerArchiveId(archiveId);
   };

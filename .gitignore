@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Firefox build
+dist-firefox
+web-ext-artifacts

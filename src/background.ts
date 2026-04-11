@@ -27,7 +27,7 @@ async function archiveCurrentWindow(name: string) {
 
     // Filter out the new tab page or extension pages if desired, but for now we keep all except maybe chrome:// pages if not allowed
     const tabInfos: TabInfo[] = tabs
-        .filter((tab: chrome.tabs.Tab) => tab.url && !tab.url.startsWith("chrome://"))
+        .filter((tab: chrome.tabs.Tab) => tab.url && !tab.url.startsWith("chrome://") && !tab.url.startsWith("about:") && !tab.url.startsWith("moz-extension://"))
         .map((tab: chrome.tabs.Tab) => ({
             url: tab.url!,
             title: tab.title || "Untitled",

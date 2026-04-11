@@ -41,13 +41,21 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build extension
+      - name: Build Chrome extension
         run: npm run build
 
-      - name: Zip extension
+      - name: Build Firefox extension
+        run: npm run build:firefox
+
+      - name: Zip Chrome extension
         run: |
           cd dist
           zip -r ../tabstash-${{ steps.vars.outputs.tag }}.zip .
+
+      - name: Zip Firefox extension
+        run: |
+          cd dist-firefox
+          zip -r ../tabstash-mozilla-${{ steps.vars.outputs.tag }}.zip .
 
       - name: Generate Changelog
         id: changelog
@@ -77,7 +85,9 @@ jobs:
         with:
           tag_name: ${{ steps.vars.outputs.tag }}
           name: TabStash ${{ steps.vars.outputs.tag }}
-          files: tabstash-${{ steps.vars.outputs.tag }}.zip
+          files: |
+            tabstash-${{ steps.vars.outputs.tag }}.zip
+            tabstash-mozilla-${{ steps.vars.outputs.tag }}.zip
           body: |
             ## What's Changed
             ${{ steps.changelog.outputs.CHANGES }}
